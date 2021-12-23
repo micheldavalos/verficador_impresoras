@@ -6,6 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
+
+	"github.com/gocolly/colly"
 )
 
 type Printers struct {
@@ -42,4 +45,45 @@ func main() {
 	
 	ips := GetIPs("ip.json")
 	log.Println(ips)
+
+	// Instantiate default collector
+	c := colly.NewCollector(
+		// Visit only domains: hackerspaces.org, wiki.hackerspaces.org
+		colly.AllowedDomains("10.0.3.75", "10.0.3.69", "10.0.3.65"),
+	)
+
+	// Before making a request print "Visiting ..."
+	c.OnRequest(func(r *colly.Request) {
+		fmt.Println("Checking printer in", r.URL.String())
+	})
+
+	var serverName string
+	c.OnResponse(func(r *colly.Response) {
+		fmt.Println("Visited", r.Request.URL)
+		// b, _ := r.Request.Marshal()
+		serverInfo31 := string(r.Body)
+		lines := strings.Split(serverInfo31, "\n")
+		// fmt.Println(serverInfo31)
+		for i := 0; i < len(lines); i++ {
+			if strings.Contains(lines[i], "myServer.name") {
+				code := strings.Split(lines[i], "=")
+				if len(code) == 2 {
+					serverName = strings.TrimSpace(code[1])
+					serverName = strings.Trim(serverName, "'';")
+					log.Println(serverName)
+				}
+				break
+			}
+		}
+	})
+
+
+	// Set error handler
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+	})
+
+	c.Visit("http://10.0.3.75/ServerInfo31.js")
+
+
 }
