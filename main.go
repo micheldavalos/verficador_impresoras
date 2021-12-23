@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"io/ioutil"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
 )
 
 type Printers struct {
@@ -15,12 +16,13 @@ type Printer struct {
 	IP string `json:"ip"`
 }
 
-func main()  {
-	fileName := "ip.json"
+func GetIPs(fileName string) []string  {
+	ips := []string{}
+
 	jsonFile, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println("No se puede abrir el archivo", fileName)
-		return
+		return ips
 	}
 	fmt.Println("Se abrió el archivo ip.json")
 	defer jsonFile.Close()
@@ -30,7 +32,14 @@ func main()  {
 	var printers Printers
 	json.Unmarshal(byteValue, &printers)
 	for i := 0; i < len(printers.Printers); i++ {
-		fmt.Println("Ip: " + printers.Printers[i].IP)
+		ips = append(ips, printers.Printers[i].IP)
 	}
 
+	return ips
+}
+
+func main() {
+	
+	ips := GetIPs("ip.json")
+	log.Println(ips)
 }
