@@ -66,15 +66,11 @@ func main() {
 		// fmt.Println("Checking printer in", r.URL.String())
 	})
 
-	var (
-		serverName string
-		model      string
-		manuf      string
-		dstatus    string
-	)
 	c.OnResponse(func(r *colly.Response) {
+		printer := Printer{}
+		printer.IP = r.Request.URL.Host
 		url := r.Request.URL.String()
-		log.Println("Visited", url)
+		//log.Println("Visited", url)
 		body := string(r.Body)
 		lines := strings.Split(body, "\n")
 		if url == "http://"+r.Request.URL.Host+"/ServerInfo31.js" {
@@ -82,9 +78,9 @@ func main() {
 				if strings.Contains(lines[i], "myServer.name") {
 					code := strings.Split(lines[i], "=")
 					if len(code) == 2 {
-						serverName = strings.TrimSpace(code[1])
-						serverName = strings.Trim(serverName, "'';")
-						log.Println("Server Name: ", serverName)
+						serverName := strings.TrimSpace(code[1])
+						printer.ServerName = strings.Trim(serverName, "'';")
+						//log.Println("Server Name: ", serverName)
 					}
 					break
 				}
@@ -96,30 +92,31 @@ func main() {
 					code := strings.Split(lines[i], "=")
 					// fmt.Println(len(code))
 					if len(code) >= 2 {
-						model = strings.TrimSpace(code[1])
-						model = strings.Trim(model, "'';")
-						log.Println(model)
+						model := strings.TrimSpace(code[1])
+						printer.Model = strings.Trim(model, "'';")
+						//log.Println(model)
 					}
 				} else if strings.Contains(lines[i], "d1.manuf =") {
 					code := strings.Split(lines[i], "=")
 					// fmt.Println(len(code))
 					if len(code) >= 2 {
-						manuf = strings.TrimSpace(code[1])
-						manuf = strings.Trim(manuf, "'';")
-						log.Println(manuf)
+						manuf := strings.TrimSpace(code[1])
+						printer.Manuf = strings.Trim(manuf, "'';")
+						//log.Println(manuf)
 					}
 				} else if strings.Contains(lines[i], "d1.Dstatus =") {
 					code := strings.Split(lines[i], "=")
 					// fmt.Println(len(code))
 					if len(code) >= 2 {
-						dstatus = strings.TrimSpace(code[1])
+						dstatus := strings.TrimSpace(code[1])
 						dstatus = strings.Trim(dstatus, "'")
-						dstatus = strings.TrimSuffix(dstatus, "';//paper empty, error, ready")
-						log.Println(dstatus)
+						printer.DStatus = strings.TrimSuffix(dstatus, "';//paper empty, error, ready")
+						//log.Println(dstatus)
 					}
 				}
 			}
 		}
+		log.Println(printer)
 	})
 
 	// Set error handler
@@ -127,7 +124,14 @@ func main() {
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
 	})
 
-	c.Visit("http://10.0.3.75/ServerInfo31.js")
-	c.Visit("http://10.0.3.75/DeviceInfo32.js")
+	for _, ip := range ips {
+		link := "http://" + ip + "/ServerInfo31.js"
+		go c.Visit(link)
+	}
+
+	var str string
+	fmt.Scanln(&str)
+
+	//c.Visit("http://10.0.3.75/DeviceInfo32.js")
 
 }
