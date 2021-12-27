@@ -183,8 +183,11 @@ func main() {
 	}
 	wg.Wait()
 
-	wg.Add(1)
-	go c01.Visit("http://10.0.3.75/DeviceInfo32.js")
+	for _, ip := range ips {
+		link := "http://" + ip + "/DeviceInfo32.js"
+		wg.Add(1)
+		go c01.Visit(link)
+	}
 
 	wg.Wait()
 
