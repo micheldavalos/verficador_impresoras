@@ -8,7 +8,10 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 )
+
+var wg sync.WaitGroup
 
 type IPList struct {
 	IpList []IP `json:"ips"`
@@ -51,9 +54,10 @@ func GetIPs(fileName string) []string {
 }
 
 func main() {
-
 	ips := GetIPs("ip.json")
 	log.Println("IP list", ips)
+
+	var printerList []Printer
 
 	// Instantiate default collector
 	c := colly.NewCollector(
@@ -73,6 +77,7 @@ func main() {
 		//log.Println("Visited", url)
 		body := string(r.Body)
 		lines := strings.Split(body, "\n")
+
 		if url == "http://"+r.Request.URL.Host+"/ServerInfo31.js" {
 			for i := 0; i < len(lines); i++ {
 				if strings.Contains(lines[i], "myServer.name") {
@@ -117,20 +122,23 @@ func main() {
 			}
 		}
 		log.Println(printer)
+		printerList = append(printerList, printer)
+		wg.Done()
 	})
 
 	// Set error handler
 	c.OnError(func(r *colly.Response, err error) {
 		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+		wg.Done()
 	})
 
 	for _, ip := range ips {
 		link := "http://" + ip + "/ServerInfo31.js"
+		wg.Add(1)
 		go c.Visit(link)
 	}
 
-	var str string
-	fmt.Scanln(&str)
+	wg.Wait()
 
 	//c.Visit("http://10.0.3.75/DeviceInfo32.js")
 
