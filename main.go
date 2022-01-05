@@ -80,12 +80,12 @@ func main() {
 
 	// Instantiate default collector
 	c := colly.NewCollector(
-		// Visit only domains: hackerspaces.org, wiki.hackerspaces.org
+		// Visit only ips domains
 		colly.AllowedDomains(ips...),
 	)
 
 	c01 := colly.NewCollector(
-		// Visit only domains: hackerspaces.org, wiki.hackerspaces.org
+		// Visit only ips domains
 		colly.AllowedDomains(ips...),
 	)
 
