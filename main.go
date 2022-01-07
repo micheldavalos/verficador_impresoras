@@ -256,7 +256,7 @@ func Verificar() {
 func main() {
 	// Build on top of DefaultHeader
 	pterm.DefaultHeader. // Use DefaultHeader as base
-				WithMargin(30).
+				WithFullWidth().
 				WithBackgroundStyle(pterm.NewStyle(pterm.BgLightCyan)). // 249, 110, 0
 				WithTextStyle(pterm.NewStyle(pterm.FgBlack)).
 				Println("Verificador de Impresoras")
