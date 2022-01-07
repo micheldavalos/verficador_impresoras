@@ -5,10 +5,10 @@ import (
 	"github.com/gocolly/colly"
 	"github.com/pterm/pterm"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 var wg sync.WaitGroup
@@ -44,23 +44,33 @@ func (p *PrinterList) FindPrinter(ip string) *Printer {
 	return nil
 }
 
-func (p *PrinterList) PrintInfo() string {
+func (p *PrinterList) PrintIPs() string {
 	var ips string
 	for i := range p.Printers {
-		ips = ips + p.Printers[i].IP
+		ips = ips + p.Printers[i].IP + ", "
 	}
 	return ips
 }
 
-func GetIPs(fileName string) []string {
-	ips := []string{}
+func (p *PrinterList) ConnectedPrints() (prints []string) {
+	for i := range p.Printers {
+		if len(p.Printers[i].ServerName) > 0 {
+			prints = append(prints, p.Printers[i].ServerName)
+		}
+	}
 
+	return prints
+}
+
+func GetIPs(fileName string) ([]string, error) {
+	var ips []string
+	var e error
 	jsonFile, err := os.Open(fileName)
 	if err != nil {
-		log.Println("Can't open file", fileName)
-		return ips
+		//log.Println("Can't open file", fileName)
+		return ips, err
 	}
-	log.Println("Successful open file", fileName)
+	//log.Println("Successful open file", fileName)
 	defer jsonFile.Close()
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 
@@ -68,20 +78,25 @@ func GetIPs(fileName string) []string {
 	var ipList IPList
 	err = json.Unmarshal(byteValue, &ipList)
 	if err != nil {
-		log.Println(err)
+		// log.Println(err)
+		return ips, err
 	}
 	for i := 0; i < len(ipList.IpList); i++ {
 		ips = append(ips, ipList.IpList[i].IP)
 	}
-	return ips
+	return ips, e
 }
 
 func main() {
-	ips := GetIPs("ip.json")
+	spinnerSuccess, _ = pterm.DefaultSpinner.Start("Leyendo archivo de ips")
+	ips, err := GetIPs("ip.json")
+	if err != nil {
+		spinnerSuccess.Fail("Error al leer el archivo ip.json")
+		return
+	}
+	time.Sleep(time.Second * 2)
+	spinnerSuccess.Success("Se abrió el archivo ip.json con las IPs: ", ips)
 	// log.Println("IP list", ips)
-
-	spinnerSuccess, _ = pterm.DefaultSpinner.Start("Verificando las siguientes IPs: ", ips)
-
 	var printerList PrinterList
 
 	for _, ip := range ips {
@@ -178,19 +193,20 @@ func main() {
 
 	// Set error handler
 	c.OnError(func(r *colly.Response, err error) {
-		// fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
-		spinnerSuccess.UpdateText("Error desde la IP " + r.Request.URL.String())
-		spinnerSuccess.Fail()
+		//fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+		spinnerSuccess.Fail("Error al leer desde la URL " + r.Request.URL.String())
+		time.Sleep(time.Millisecond * 500)
 		wg.Done()
 	})
 
 	c01.OnError(func(r *colly.Response, err error) {
 		// fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
-		spinnerSuccess.UpdateText("Error desde la IP " + r.Request.URL.String())
-		spinnerSuccess.Fail()
+		spinnerSuccess.Fail("Error al leer desde la URL " + r.Request.URL.String())
+		time.Sleep(time.Millisecond * 500)
 		wg.Done()
 	})
 
+	spinnerSuccess, _ = spinnerSuccess.Start("Verificando las IPs: ", ips)
 	for _, ip := range ips {
 		link := "http://" + ip + "/ServerInfo31.js"
 		wg.Add(1)
@@ -198,15 +214,19 @@ func main() {
 	}
 	wg.Wait()
 
+	spinnerSuccess, _ = spinnerSuccess.Start("Verificando las IPs: ", ips)
 	for _, ip := range ips {
 		link := "http://" + ip + "/DeviceInfo32.js"
 		wg.Add(1)
 		go c01.Visit(link)
 	}
-
 	wg.Wait()
 
-	spinnerSuccess.UpdateText(printerList.PrintInfo())
-	spinnerSuccess.Success()
+	connected := printerList.ConnectedPrints()
+	if len(connected) > 0 {
+		spinnerSuccess.Success("Ethernet-USB conectados: ", connected)
+	} else {
+		spinnerSuccess.Fail("No hay impresoras conectadas")
+	}
 	// fmt.Println(printerList)
 }
