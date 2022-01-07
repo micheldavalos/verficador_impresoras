@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"github.com/fatih/structs"
 	"github.com/gocolly/colly"
 	"github.com/pterm/pterm"
 	"io/ioutil"
@@ -61,6 +62,25 @@ func (p *PrinterList) ConnectedPrints() (prints []string) {
 	}
 
 	return prints
+}
+
+func (p *PrinterList) GetPrintersInfo() [][]string {
+
+	printers := [][]string{
+		structs.Names(&Printer{}),
+	}
+	for i := range p.Printers {
+		var printer []string
+		printer = append(printer, p.Printers[i].IP)
+		printer = append(printer, p.Printers[i].ServerName)
+		printer = append(printer, p.Printers[i].Model)
+		printer = append(printer, p.Printers[i].Manuf)
+		printer = append(printer, p.Printers[i].DStatus)
+
+		printers = append(printers, printer)
+
+	}
+	return printers
 }
 
 func GetIPs(fileName string) ([]string, error) {
@@ -223,9 +243,12 @@ func Verificar() {
 	}
 	wg.Wait()
 
+	// TODO: Imprimir info si hay Ethernet-USB conectados
 	connected := printerList.ConnectedPrints()
 	if len(connected) > 0 {
 		spinnerSuccess.Success("Ethernet-USB conectados: ", connected)
+		table := printerList.GetPrintersInfo()
+		pterm.DefaultTable.WithHasHeader().WithData(table).Render()
 	} else {
 		spinnerSuccess.Warning("No hay impresoras conectadas")
 	}
