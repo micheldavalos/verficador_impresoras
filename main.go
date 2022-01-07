@@ -227,19 +227,19 @@ func Verificar() {
 	if len(connected) > 0 {
 		spinnerSuccess.Success("Ethernet-USB conectados: ", connected)
 	} else {
-		spinnerSuccess.Fail("No hay impresoras conectadas")
+		spinnerSuccess.Warning("No hay impresoras conectadas")
 	}
 }
 func main() {
 	// Build on top of DefaultHeader
 	pterm.DefaultHeader. // Use DefaultHeader as base
 				WithMargin(30).
-				WithBackgroundStyle(pterm.NewStyle(pterm.BgCyan)).
+				WithBackgroundStyle(pterm.NewStyle(pterm.BgLightCyan)). // 249, 110, 0
 				WithTextStyle(pterm.NewStyle(pterm.FgBlack)).
 				Println("Verificador de Impresoras")
 
 	Verificar()
 
-	pterm.Info.Println("Presiona una tecla terminar")
+	pterm.Info.Println("Presiona una tecla terminar...")
 	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
