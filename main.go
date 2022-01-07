@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gocolly/colly"
+	"github.com/pterm/pterm"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,6 +12,7 @@ import (
 )
 
 var wg sync.WaitGroup
+var spinnerSuccess *pterm.SpinnerPrinter
 
 type IPList struct {
 	IpList []IP `json:"ips"`
@@ -43,6 +44,14 @@ func (p *PrinterList) FindPrinter(ip string) *Printer {
 	return nil
 }
 
+func (p *PrinterList) PrintInfo() string {
+	var ips string
+	for i := range p.Printers {
+		ips = ips + p.Printers[i].IP
+	}
+	return ips
+}
+
 func GetIPs(fileName string) []string {
 	ips := []string{}
 
@@ -69,7 +78,9 @@ func GetIPs(fileName string) []string {
 
 func main() {
 	ips := GetIPs("ip.json")
-	log.Println("IP list", ips)
+	// log.Println("IP list", ips)
+
+	spinnerSuccess, _ = pterm.DefaultSpinner.Start("Verificando las siguientes IPs: ", ips)
 
 	var printerList PrinterList
 
@@ -167,12 +178,16 @@ func main() {
 
 	// Set error handler
 	c.OnError(func(r *colly.Response, err error) {
-		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+		// fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+		spinnerSuccess.UpdateText("Error desde la IP " + r.Request.URL.String())
+		spinnerSuccess.Fail()
 		wg.Done()
 	})
 
 	c01.OnError(func(r *colly.Response, err error) {
-		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+		// fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+		spinnerSuccess.UpdateText("Error desde la IP " + r.Request.URL.String())
+		spinnerSuccess.Fail()
 		wg.Done()
 	})
 
@@ -191,5 +206,7 @@ func main() {
 
 	wg.Wait()
 
-	fmt.Println(printerList)
+	spinnerSuccess.UpdateText(printerList.PrintInfo())
+	spinnerSuccess.Success()
+	// fmt.Println(printerList)
 }
