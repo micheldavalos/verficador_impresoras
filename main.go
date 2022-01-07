@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"github.com/gocolly/colly"
 	"github.com/pterm/pterm"
@@ -87,7 +88,7 @@ func GetIPs(fileName string) ([]string, error) {
 	return ips, e
 }
 
-func main() {
+func Verificar() {
 	spinnerSuccess, _ = pterm.DefaultSpinner.Start("Leyendo archivo de ips")
 	ips, err := GetIPs("ip.json")
 	if err != nil {
@@ -228,5 +229,17 @@ func main() {
 	} else {
 		spinnerSuccess.Fail("No hay impresoras conectadas")
 	}
-	// fmt.Println(printerList)
+}
+func main() {
+	// Build on top of DefaultHeader
+	pterm.DefaultHeader. // Use DefaultHeader as base
+				WithMargin(30).
+				WithBackgroundStyle(pterm.NewStyle(pterm.BgCyan)).
+				WithTextStyle(pterm.NewStyle(pterm.FgBlack)).
+				Println("Verificador de Impresoras")
+
+	Verificar()
+
+	pterm.Info.Println("Presiona una tecla terminar")
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
