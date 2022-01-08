@@ -165,6 +165,7 @@ func Verificar() {
 		}
 		//log.Println(printer)
 		//printerList = append(printerList, printer)
+		spinnerSuccess.Success("Ethernet-USB en " + r.Request.URL.String())
 		wg.Done()
 	})
 
@@ -209,6 +210,8 @@ func Verificar() {
 				}
 			}
 		}
+		spinnerSuccess.Success("Impresora en " + r.Request.URL.String())
+		time.Sleep(time.Millisecond * 500)
 		wg.Done()
 	})
 
