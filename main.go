@@ -203,7 +203,7 @@ func Verificar() {
 					if len(code) >= 2 {
 						dstatus := strings.TrimSpace(code[1])
 						dstatus = strings.Trim(dstatus, "''")
-						printer.DStatus = strings.TrimSuffix(dstatus, ";//paper empty, error, ready")
+						printer.DStatus = strings.TrimSuffix(dstatus, "';//paper empty, error, ready")
 						//log.Println(dstatus)
 					}
 				}
